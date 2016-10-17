@@ -52,6 +52,10 @@
         <dependencySet>
             <outputDirectory>lib/</outputDirectory>
             <useProjectArtifact>true</useProjectArtifact> <!-- avoid inclusion of the artifact itself --> 
+            <excludes>
+                <exclude>lus:lus.java</exclude>
+            </excludes>
+            <useTransitiveFiltering>true</useTransitiveFiltering>
         </dependencySet>
     </dependencySets>
 </assembly>
