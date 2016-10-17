@@ -34,6 +34,7 @@ import java.util.concurrent.TimeUnit;
 
 import static io.moquette.BrokerConstants.PERSISTENT_STORE_PROPERTY_NAME;
 import static io.moquette.BrokerConstants.AUTOSAVE_INTERVAL_PROPERTY_NAME;
+import lus.LusThread;
 
 /**
  * MapDB main persistence implementation
@@ -96,7 +97,7 @@ public class MapDBPersistentStore {
             }
             m_db = DBMaker.newFileDB(tmpFile).make();
         }
-        m_scheduler.scheduleWithFixedDelay(new Runnable() {
+        m_scheduler.scheduleWithFixedDelay(new LusThread() {
             @Override
             public void run() {
                 m_db.commit();
