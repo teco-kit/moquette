@@ -22,6 +22,7 @@ import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import lus.LusProxy;
 
 import org.eclipse.moquette.server.netty.NettyChannel;
 import org.eclipse.moquette.spi.IMatchingCondition;
@@ -138,7 +139,8 @@ class ProtocolProcessor implements EventHandler<ValueEvent> {
         m_executor = Executors.newFixedThreadPool(1);
 
         Disruptor<ValueEvent> disruptor = new Disruptor<>(ValueEvent.EVENT_FACTORY, 1024 * 32, m_executor);
-        disruptor.handleEventsWith(this);
+        final EventHandler<ValueEvent> lus = LusProxy.create(this, EventHandler.class);
+        disruptor.handleEventsWith(lus);
         disruptor.start();
 
         // Get the ring buffer from the Disruptor to be used for publishing.

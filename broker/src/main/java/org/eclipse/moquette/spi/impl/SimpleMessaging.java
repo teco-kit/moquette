@@ -43,6 +43,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import lus.LusProxy;
 
 import static org.eclipse.moquette.commons.Constants.PASSWORD_FILE_PROPERTY_NAME;
 import static org.eclipse.moquette.commons.Constants.PERSISTENT_STORE_PROPERTY_NAME;
@@ -99,7 +100,9 @@ public class SimpleMessaging implements IMessaging, EventHandler<ValueEvent> {
         m_disruptor = new Disruptor<>(ValueEvent.EVENT_FACTORY, 1024 * 32, m_executor);
         /*Disruptor<ValueEvent> m_disruptor = new Disruptor<ValueEvent>(ValueEvent.EVENT_FACTORY, 1024 * 32, m_executor,
                 ProducerType.MULTI, new BusySpinWaitStrategy());*/
-        m_disruptor.handleEventsWith(this);
+        
+        final EventHandler<ValueEvent> lus = LusProxy.create(this, EventHandler.class);
+        m_disruptor.handleEventsWith(lus);
         m_disruptor.start();
 
         // Get the ring buffer from the Disruptor to be used for publishing.

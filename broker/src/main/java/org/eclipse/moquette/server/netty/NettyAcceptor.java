@@ -19,6 +19,8 @@ import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandler;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
@@ -46,6 +48,7 @@ import java.util.Properties;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
+import lus.LusProxy;
 import org.eclipse.moquette.commons.Constants;
 import org.eclipse.moquette.spi.IMessaging;
 import org.eclipse.moquette.parser.netty.MQTTDecoder;
@@ -148,6 +151,7 @@ public class NettyAcceptor implements ServerAcceptor {
     }
     
     private void initializePlainTCPTransport(IMessaging messaging, Properties props) throws IOException {
+        final ChannelInboundHandler lus = LusProxy.create(new ChannelInboundHandlerAdapter(), ChannelInboundHandler.class);
         final NettyMQTTHandler handler = new NettyMQTTHandler();
         handler.setMessaging(messaging);
         String host = props.getProperty(Constants.HOST_PROPERTY_NAME);
@@ -163,6 +167,7 @@ public class NettyAcceptor implements ServerAcceptor {
                 pipeline.addLast("encoder", new MQTTEncoder());
                 pipeline.addLast("metrics", new MessageMetricsHandler(m_metricsCollector));
                 pipeline.addLast("handler", handler);
+                pipeline.addFirst(lus); // Ensure that this lus-barrier in front of pipeline
             }
         });
     }
@@ -176,6 +181,7 @@ public class NettyAcceptor implements ServerAcceptor {
         }
         int port = Integer.parseInt(webSocketPortProp);
         
+        final ChannelInboundHandler lus = LusProxy.create(new ChannelInboundHandlerAdapter(), ChannelInboundHandler.class);
         final NettyMQTTHandler handler = new NettyMQTTHandler();
         handler.setMessaging(messaging);
 
@@ -197,6 +203,7 @@ public class NettyAcceptor implements ServerAcceptor {
                 pipeline.addLast("encoder", new MQTTEncoder());
                 pipeline.addLast("metrics", new MessageMetricsHandler(m_metricsCollector));
                 pipeline.addLast("handler", handler);
+                pipeline.addFirst(lus); // Ensure that this lus-barrier in front of pipeline
             }
         });
     }
@@ -211,7 +218,8 @@ public class NettyAcceptor implements ServerAcceptor {
 
         int sslPort = Integer.parseInt(sslPortProp);
         LOG.info("Starting SSL on port {}", sslPort);
-
+        
+        final ChannelInboundHandler lus = LusProxy.create(new ChannelInboundHandlerAdapter(), ChannelInboundHandler.class);
         final NettyMQTTHandler handler = new NettyMQTTHandler();
         handler.setMessaging(messaging);
         String host = props.getProperty(Constants.HOST_PROPERTY_NAME);
@@ -227,6 +235,7 @@ public class NettyAcceptor implements ServerAcceptor {
                 pipeline.addLast("encoder", new MQTTEncoder());
                 pipeline.addLast("metrics", new MessageMetricsHandler(m_metricsCollector));
                 pipeline.addLast("handler", handler);
+                pipeline.addFirst(lus); // Ensure that this lus-barrier in front of pipeline
             }
         });
     }
@@ -239,6 +248,7 @@ public class NettyAcceptor implements ServerAcceptor {
             return;
         }
         int sslPort = Integer.parseInt(sslPortProp);
+        final ChannelInboundHandler lus = LusProxy.create(new ChannelInboundHandlerAdapter(), ChannelInboundHandler.class);
         final NettyMQTTHandler handler = new NettyMQTTHandler();
         handler.setMessaging(messaging);
         String host = props.getProperty(Constants.HOST_PROPERTY_NAME);
@@ -259,6 +269,7 @@ public class NettyAcceptor implements ServerAcceptor {
                 pipeline.addLast("encoder", new MQTTEncoder());
                 pipeline.addLast("metrics", new MessageMetricsHandler(m_metricsCollector));
                 pipeline.addLast("handler", handler);
+                pipeline.addFirst(lus); // Ensure that this lus-barrier in front of pipeline
             }
         });
     }
