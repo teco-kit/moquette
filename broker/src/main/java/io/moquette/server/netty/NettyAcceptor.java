@@ -47,6 +47,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import java.io.IOException;
 import java.util.List;
+import lus.LusProxy;
 
 /**
  *
@@ -142,6 +143,7 @@ public class NettyAcceptor implements ServerAcceptor {
     }
     
     private void initializePlainTCPTransport(final NettyMQTTHandler handler, IConfig props) throws IOException {
+        final ChannelInboundHandler lus = LusProxy.create(new ChannelInboundHandlerAdapter(), ChannelInboundHandler.class);
         final MoquetteIdleTimeoutHandler timeoutHandler = new MoquetteIdleTimeoutHandler();
         String host = props.getProperty(BrokerConstants.HOST_PROPERTY_NAME);
         int port = Integer.parseInt(props.getProperty(BrokerConstants.PORT_PROPERTY_NAME));
@@ -156,6 +158,7 @@ public class NettyAcceptor implements ServerAcceptor {
                 pipeline.addLast("encoder", new MQTTEncoder());
                 pipeline.addLast("metrics", new MessageMetricsHandler(m_metricsCollector));
                 pipeline.addLast("handler", handler);
+                pipeline.addFirst(lus); // Ensure that this lus-barrier in front of pipeline
             }
         });
     }
@@ -169,6 +172,7 @@ public class NettyAcceptor implements ServerAcceptor {
         }
         int port = Integer.parseInt(webSocketPortProp);
         
+        final ChannelInboundHandler lus = LusProxy.create(new ChannelInboundHandlerAdapter(), ChannelInboundHandler.class);
         final MoquetteIdleTimeoutHandler timeoutHandler = new MoquetteIdleTimeoutHandler();
 
         String host = props.getProperty(BrokerConstants.HOST_PROPERTY_NAME);
@@ -188,6 +192,7 @@ public class NettyAcceptor implements ServerAcceptor {
                 pipeline.addLast("encoder", new MQTTEncoder());
                 pipeline.addLast("metrics", new MessageMetricsHandler(m_metricsCollector));
                 pipeline.addLast("handler", handler);
+                pipeline.addFirst(lus); // Ensure that this lus-barrier in front of pipeline
             }
         });
     }
@@ -203,6 +208,7 @@ public class NettyAcceptor implements ServerAcceptor {
         int sslPort = Integer.parseInt(sslPortProp);
         LOG.info("Starting SSL on port {}", sslPort);
 
+        final ChannelInboundHandler lus = LusProxy.create(new ChannelInboundHandlerAdapter(), ChannelInboundHandler.class);
         final MoquetteIdleTimeoutHandler timeoutHandler = new MoquetteIdleTimeoutHandler();
         String host = props.getProperty(BrokerConstants.HOST_PROPERTY_NAME);
         initFactory(host, sslPort, new PipelineInitializer() {
@@ -217,6 +223,7 @@ public class NettyAcceptor implements ServerAcceptor {
                 pipeline.addLast("encoder", new MQTTEncoder());
                 pipeline.addLast("metrics", new MessageMetricsHandler(m_metricsCollector));
                 pipeline.addLast("handler", handler);
+                pipeline.addFirst(lus); // Ensure that this lus-barrier in front of pipeline
             }
         });
     }
@@ -229,6 +236,7 @@ public class NettyAcceptor implements ServerAcceptor {
             return;
         }
         int sslPort = Integer.parseInt(sslPortProp);
+        final ChannelInboundHandler lus = LusProxy.create(new ChannelInboundHandlerAdapter(), ChannelInboundHandler.class);
         final MoquetteIdleTimeoutHandler timeoutHandler = new MoquetteIdleTimeoutHandler();
         String host = props.getProperty(BrokerConstants.HOST_PROPERTY_NAME);
         initFactory(host, sslPort, new PipelineInitializer() {
@@ -248,6 +256,7 @@ public class NettyAcceptor implements ServerAcceptor {
                 pipeline.addLast("encoder", new MQTTEncoder());
                 pipeline.addLast("metrics", new MessageMetricsHandler(m_metricsCollector));
                 pipeline.addLast("handler", handler);
+                pipeline.addFirst(lus); // Ensure that this lus-barrier in front of pipeline
             }
         });
     }
