@@ -15,25 +15,34 @@
  */
 package io.moquette.spi.impl;
 
+import com.lmax.disruptor.EventFactory;
+import com.lmax.disruptor.EventHandler;
 import io.moquette.BrokerConstants;
 import io.moquette.spi.IMessagesStore;
 import io.moquette.interception.InterceptHandler;
+import io.moquette.proto.messages.AbstractMessage;
+import io.moquette.server.ServerChannel;
 import io.moquette.server.config.IConfig;
+import io.moquette.server.netty.NettyMQTTHandler;
 import io.moquette.spi.ISessionsStore;
 import io.moquette.spi.impl.security.*;
+import io.moquette.spi.impl.subscriptions.Subscription;
 import io.moquette.spi.impl.subscriptions.SubscriptionsStore;
 import io.moquette.spi.persistence.MapDBPersistentStore;
 import io.moquette.spi.security.IAuthenticator;
 import io.moquette.spi.security.IAuthorizator;
+import io.netty.channel.ChannelHandlerContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.nio.ByteBuffer;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
+import lus.LusXF;
 
 /**
  *
@@ -43,7 +52,7 @@ import java.util.List;
  *
  * @author andrea
  */
-public class SimpleMessaging {
+public class SimpleMessaging implements EventHandler<SimpleMessaging.ValueEvent> {
 
     private static final Logger LOG = LoggerFactory.getLogger(SimpleMessaging.class);
 
@@ -180,6 +189,67 @@ public class SimpleMessaging {
         }
 
         return instance;
+    }
+	
+	static abstract class MessagingEvent {
+		
+	}
+	
+	static class ValueEvent {
+		public MessagingEvent m_event;
+		public final static EventFactory<ValueEvent> EVENT_FACTORY = new EventFactory<ValueEvent>() {
+			public ValueEvent newInstance() {
+				return new ValueEvent();
+			}
+		};
+	}
+	
+	static class LostConnectionEvent extends MessagingEvent {
+		public String clientID;
+	}
+	
+	static class OutputMessagingEvent extends MessagingEvent {
+		public ServerChannel m_channel;
+		public AbstractMessage m_message;
+	}
+	
+	static class ProtocolEvent extends MessagingEvent {
+		public ChannelHandlerContext ctx; // extracted out of public ServerChannel m_session; by a transformation
+		public AbstractMessage message;
+	}
+	
+	static class PubAckEvent extends MessagingEvent {
+		public int m_messageId;
+		public String m_clientID;
+	}
+	
+	static class PublishEvent extends MessagingEvent {
+		public String m_topic;
+		public AbstractMessage.QOSType m_qos;
+		public ByteBuffer m_message;
+		public boolean m_retain;
+		public String m_clientID;
+		public Integer m_msgID;
+	}
+	
+	static class StopEvent extends MessagingEvent { }
+	
+	static class SubscribeEvent extends MessagingEvent {
+		public Subscription m_subscription;
+		public int m_messageID;
+	}
+	
+	static class RepublishEvent extends MessagingEvent {
+		public String m_clientID;
+	}
+	
+	private NettyMQTTHandler nettyMQTTHandler; // the one and only instance in v0.8
+	
+	@Override
+    public void onEvent(ValueEvent event, long l, boolean bln) throws Exception {
+		LusXF.ASSERT(event.m_event instanceof ProtocolEvent);
+		ProtocolEvent protocolEvent = ((ProtocolEvent)event.m_event);
+		nettyMQTTHandler.channelRead(protocolEvent.ctx, (Object)protocolEvent.message);
     }
 
     public void shutdown() {

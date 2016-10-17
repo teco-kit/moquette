@@ -15,6 +15,7 @@
  */
 package io.moquette.spi.impl;
 
+import com.lmax.disruptor.EventHandler;
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -58,7 +59,20 @@ import org.slf4j.LoggerFactory;
  * 
  * @author andrea
  */
-public class ProtocolProcessor {
+public class ProtocolProcessor implements EventHandler<SimpleMessaging.ValueEvent> {
+
+	@Override
+	public void onEvent(SimpleMessaging.ValueEvent event, long sequence, boolean endOfBatch) throws Exception {
+        try {
+            SimpleMessaging.MessagingEvent evt = event.m_event;
+            //It's always of type OutputMessagingEvent
+            SimpleMessaging.OutputMessagingEvent outEvent = (SimpleMessaging.OutputMessagingEvent) evt;
+            LOG.debug("Output event, sending {}", outEvent.m_message);
+            outEvent.m_channel.write(outEvent.m_message);
+        } finally {
+            event.m_event = null; //free the reference to all Netty stuff
+        }
+    }
 
     static final class WillMessage {
         private final String topic;
